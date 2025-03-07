@@ -1,10 +1,20 @@
 local Options = {
+    enabled = false,
     reload_files = false,
-    reload_modules = false,
+    reload_modules = true,
 }
 
 local function setup(config)
     Options = vim.tbl_deep_extend('force', Options, config)
+end
+
+local function toggle()
+    Options.enabled = not Options.enabled
+    if Options.enabled then
+        vim.notify('autoreload enabled')
+    else
+        vim.notify('autoreload disabled')
+    end
 end
 
 local function build_module_names(path)
@@ -52,4 +62,5 @@ end
 return {
     on_write = on_write,
     setup = setup,
+    toggle = toggle,
 }
