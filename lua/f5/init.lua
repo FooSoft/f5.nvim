@@ -44,6 +44,10 @@ local function build_module_names(path)
 end
 
 local function on_write(path)
+    if not Options.enabled then
+        return
+    end
+
     if not vim.startswith(path, vim.fn.stdpath('config')) then
         return
     end
