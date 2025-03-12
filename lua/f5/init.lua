@@ -1,5 +1,5 @@
 local Options = {
-    enabled = false,
+    enabled = true,
     reload_files = false,
     reload_modules = true,
 }
@@ -11,33 +11,40 @@ end
 local function toggle()
     Options.enabled = not Options.enabled
     if Options.enabled then
-        vim.notify('autoreload enabled')
+        vim.notify('F5 enabled')
     else
-        vim.notify('autoreload disabled')
+        vim.notify('F5 disabled')
     end
 end
 
 local function build_module_names(path)
     local path_parts = {}
-    for part in path:gmatch('[^/\\]+') do
-        table.insert(path_parts, part)
+    for path_part in path:gmatch('[^/\\]+') do
+        table.insert(path_parts, path_part)
     end
 
-    local module_name = nil
-    local module_names = {}
+    local path_start_index = nil
     for i = #path_parts - 1, 1, -1 do
-        local path_part = path_parts[i]
-        if path_part == 'lua' then
+        if path_parts[i]:lower() == 'lua' then
+            path_start_index = i + 1
             break
         end
+    end
 
-        if module_name then
-            module_name = module_name .. '.' .. path_part
-        else
-            module_name = path_part
+    local module_names = {}
+    if path_start_index then
+        local module_name = nil
+        for i = path_start_index, #path_parts do
+            local path_part = path_parts[i]
+            if not vim.endswith(path_part:lower(), '.lua') then
+                if module_name then
+                    module_name = module_name .. '.' .. path_part
+                else
+                    module_name = path_part
+                end
+                table.insert(module_names, module_name)
+            end
         end
-
-        table.insert(module_names, module_name)
     end
 
     return module_names
