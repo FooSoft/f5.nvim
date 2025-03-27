@@ -1,3 +1,9 @@
+if vim.g.f5_loaded then
+    return
+else
+    vim.g.f5_loaded = true
+end
+
 local function on_write(event)
     require('f5').on_write(event.match)
 end
