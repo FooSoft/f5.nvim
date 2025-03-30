@@ -21,7 +21,7 @@ Specifies whether or not the plugin is enabled by default.
 
 Specifies if Lua scripts should be reloaded via `dofile` when changed. You should only set this to `true` if you trust the scripts you are editing.
 
-### `reload_modules`
+#### `reload_modules`
 
 Specifies if Lua modules should be cleared from `package.loaded` cache when changed. Note that this does not update any stored references to the module in scripts; users of the module must still call `require` to fetch the updated version.
 
@@ -31,4 +31,4 @@ Commands have no keyboard bindings by default. Specify your own mappings as need
 
 #### `F5`
 
-Toggles the `enabled` state of the plugin.
+Toggles the enabled state of the plugin.
