@@ -55,7 +55,12 @@ local function on_write(path)
         return
     end
 
-    if not vim.startswith(path, vim.fn.stdpath('config')) then
+    local config_path = vim.fn.stdpath('config')
+    if vim.fn.getftype(config_path) == 'link' then
+        config_path = vim.fn.resolve(config_path)
+    end
+
+    if not vim.startswith(path, config_path) then
         return
     end
 
