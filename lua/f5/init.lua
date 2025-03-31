@@ -59,7 +59,9 @@ local function on_write(path)
     if vim.fn.getftype(config_path) == 'link' then
         config_path = vim.fn.resolve(config_path)
     end
-    config_path = config_path:gsub('\\', '/')
+    if vim.fn.has('win32') == 1 then
+        config_path = config_path:gsub('\\', '/')
+    end
 
     if not vim.startswith(path, config_path) then
         return
