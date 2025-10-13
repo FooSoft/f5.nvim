@@ -4,19 +4,6 @@ local Options = {
     reload_modules = true,
 }
 
-local function setup(config)
-    Options = vim.tbl_deep_extend('force', Options, config)
-end
-
-local function toggle()
-    Options.enabled = not Options.enabled
-    if Options.enabled then
-        vim.notify('F5 enabled')
-    else
-        vim.notify('F5 disabled')
-    end
-end
-
 local function build_module_names(path)
     local path_parts = {}
     for path_part in path:gmatch('[^/\\]+') do
@@ -50,7 +37,22 @@ local function build_module_names(path)
     return module_names
 end
 
-local function on_write(path)
+local M = {}
+
+function M.setup(config)
+    Options = vim.tbl_deep_extend('force', Options, config)
+end
+
+function M.toggle()
+    Options.enabled = not Options.enabled
+    if Options.enabled then
+        vim.notify('F5 enabled')
+    else
+        vim.notify('F5 disabled')
+    end
+end
+
+function M.on_write(path)
     if not Options.enabled then
         return
     end
@@ -78,8 +80,4 @@ local function on_write(path)
     end
 end
 
-return {
-    on_write = on_write,
-    setup = setup,
-    toggle = toggle,
-}
+return M
