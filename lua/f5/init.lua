@@ -5,51 +5,47 @@ local Options = {
 }
 
 local function build_module_names(path)
-    local path_parts = {}
-    for path_part in path:gmatch('[^/\\]+') do
-        table.insert(path_parts, path_part)
-    end
-
-    local path_start_index = nil
-    for i = #path_parts - 1, 1, -1 do
-        if path_parts[i]:lower() == 'lua' then
-            path_start_index = i + 1
-            break
-        end
-    end
-
+    local module_path = ('/' .. path):match('/lua/(.+)%.lua$')
     local module_names = {}
-    if path_start_index then
-        local module_name = nil
-        for i = path_start_index, #path_parts do
-            local path_part = path_parts[i]
-            if not vim.endswith(path_part:lower(), '.lua') then
-                if module_name then
-                    module_name = module_name .. '.' .. path_part
-                else
-                    module_name = path_part
-                end
-                table.insert(module_names, module_name)
-            end
+    if module_path then
+        local module_name
+        for part in module_path:gmatch('[^/]+') do
+            module_name = module_name and (module_name .. '.' .. part) or part
+            table.insert(module_names, module_name)
         end
     end
 
     return module_names
 end
 
+local function normalize_path(path)
+    path = vim.fn.fnamemodify(path, ':p')
+    if vim.fn.has('win32') == 1 then
+        path = path:gsub('\\', '/')
+    end
+    return path:gsub('/+$', '')
+end
+
+local function relative_path(path, root)
+    local prefix = root .. '/'
+    local candidate = path
+    if vim.fn.has('win32') == 1 then
+        candidate, prefix = candidate:lower(), prefix:lower()
+    end
+    if candidate:sub(1, #prefix) == prefix then
+        return path:sub(#prefix + 1)
+    end
+end
+
 local M = {}
 
 function M.setup(config)
-    Options = vim.tbl_deep_extend('force', Options, config)
+    Options = vim.tbl_deep_extend('force', Options, config or {})
 end
 
 function M.toggle()
     Options.enabled = not Options.enabled
-    if Options.enabled then
-        vim.notify('F5 enabled')
-    else
-        vim.notify('F5 disabled')
-    end
+    vim.notify(Options.enabled and 'F5 enabled' or 'F5 disabled')
 end
 
 function M.on_write(path)
@@ -57,26 +53,26 @@ function M.on_write(path)
         return
     end
 
-    local config_path = vim.fn.stdpath('config')
-    if vim.fn.getftype(config_path) == 'link' then
-        config_path = vim.fn.resolve(config_path)
-    end
-    if vim.fn.has('win32') == 1 then
-        config_path = config_path:gsub('\\', '/')
+    path = normalize_path(path)
+    local config_path = normalize_path(vim.fn.stdpath('config'))
+    local realpath = (vim.uv or vim.loop).fs_realpath
+    local relative = relative_path(path, config_path)
+        or relative_path(
+            normalize_path(realpath(path) or path),
+            normalize_path(realpath(config_path) or config_path)
+        )
+    if not relative then
+        return
     end
 
-    if not vim.startswith(path, config_path) then
-        return
+    if Options.reload_modules then
+        for _, module_name in ipairs(build_module_names(relative)) do
+            package.loaded[module_name] = nil
+        end
     end
 
     if Options.reload_files then
         dofile(path)
-    end
-
-    if Options.reload_modules then
-        for _, module_name in ipairs(build_module_names(path)) do
-            package.loaded[module_name] = nil
-        end
     end
 end
 
